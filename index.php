@@ -7,5 +7,6 @@
 </head>
 <body>
     cicd test one again by webhook automatically
+    <?php secho sdate('Y-m-d H:i:s'); ?>
 </body>
 </html>
