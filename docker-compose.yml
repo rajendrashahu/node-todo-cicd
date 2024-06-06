@@ -1,0 +1,68 @@
+version: '3'
+
+services:
+  cicd_pinevisa_nginx:
+    container_name: cicd_pinevisa_nginx
+    image: nginx:stable
+    ports:
+      - "80"
+    volumes:
+      - ./todo-node-app/cicd_pinevisa:/var/www/html
+      - ./site.conf:/etc/nginx/conf.d/default.conf
+    links:
+      - cicd_pinevisa_db
+      - cicd_pinevisa_php 
+    network_mode: "rev-proxy"
+    environment:
+      - VIRTUAL_HOST=cicd.pinevisa.com
+      - LETSENCRYPT_HOST=cicd.pinevisa.com
+  cicd_pinevisa_php:
+    container_name: cicd_pinevisa_php
+    build: ./php
+    links:
+      - cicd_pinevisa_db
+    volumes:
+      - ./todo-node-app/cicd_pinevisa:/var/www/html
+    networks:
+      - default
+    
+  cicd_pinevisa_db:
+    container_name: cicd_pinevisa_db
+    image: mysql:5.7.30
+    ports:
+      - "7585:3306"
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: $ROOT_PASSWORD
+      MYSQL_DATABASE: $DB_NAME
+      MYSQL_USER: $USER
+      MYSQL_PASSWORD: $USER_PASSWORD
+      MYSQL_HOST: cicd_pinevisa_db
+    volumes:
+      - ./db:/var/lib/mysql
+    networks:
+      - default
+  
+  cicd_pinevisa_pma:
+    container_name: cicd_pinevisa_pma
+    image: phpmyadmin/phpmyadmin
+    links:
+      - cicd_pinevisa_db:db
+    ports:
+      - "4545:80"
+    environment:
+      UPLOAD_LIMIT: 2000M
+      PMA_HOST: cicd_pinevisa_db
+      MYSQL_USER: $USER
+      MYSQL_PASSWORD: $USER_PASSWORD
+      MYSQL_ROOT_PASSWORD: $ROOT_PASSWORD
+    
+volumes:
+  cicd_pinevisa:
+  db:
+  
+networks:
+  default:
+    name: rev-proxy
+    external: true
+
